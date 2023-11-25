@@ -132,17 +132,21 @@ filterPosts config posts =
     let
         textPosts: Post -> Bool
         textPosts post = 
-            if config.showTextOnly == False then
-                (String.toLower post.type_) == "text"
+            if config.showTextOnly == False  then
+                case post.url of
+                    Just u -> True
+                    Nothing -> False
             else 
-                False
+            case post.url of
+                Just u -> True
+                Nothing -> True
 
         jobPosts: Post -> Bool
         jobPosts post =
-            if config.showJobs == False then
-                (String.toLower post.type_) == "job"
+            if config.showJobs == True then
+                 post.type_ == "job"
             else
-                False
+                 post.type_ /= "job"
     
         filteredPosts =
             posts |> List.filter (\post -> textPosts post) |> List.filter (\post -> jobPosts post)

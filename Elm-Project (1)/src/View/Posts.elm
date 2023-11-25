@@ -41,12 +41,13 @@ postTable config currentTime posts =
           tr[][
              th [] [ text "Score" ]
                     , th [] [ text "Title" ]
+                    , th [] [ text "Link" ]
                     , th [] [ text "Type" ]
                     , th [] [ text "Posted Date" ]
-                    , th [] [ text "Link" ]
+                    
           ]
         ]
-      , tbody [] (List.map (postToHtml currentTime) posts  )
+      , tbody [] ( Model.PostsConfig.filterPosts config posts |>List.map (postToHtml currentTime)  )
       ]
     ]
 
@@ -55,17 +56,16 @@ postToHtml currentTime post  =
   
     tr []
       [
-        td [  class "post-by" ] [ text post.by ]
-          , td [  class "post-id" ] [ text <| String.fromInt post.id ]
-          , td [  class "post-score" ] [ text <| String.fromInt post.score ]
-          , td [ class "post-title" ] [ text post.title ]
+        td [  class "post-score" ] [ text <| String.fromInt post.score ]
+        , td [ class "post-title" ] [ text post.title ]
           , td [  class "post-url" ]
               [ case post.url of
                   Just u -> a [ href u, class "post-url" ] [ text "Link" ]
                   Nothing -> text ""
               ]
-          , td [  class "post-time" ] [ text ((Util.Time.formatTime Time.utc (post.time) ++ " (" ++ (Maybe.withDefault { days = 0, hours = 0, minutes = 0, seconds = 0 } (Util.Time.durationBetween post.time currentTime) |> Util.Time.formatDuration) ++ ")"))  ]
           , td [  class "post-type" ] [ text post.type_ ]
+          , td [  class "post-time" ] [ text ((Util.Time.formatTime Time.utc (post.time) ++ " (" ++ (Maybe.withDefault { days = 0, hours = 0, minutes = 0, seconds = 0 } (Util.Time.durationBetween post.time currentTime) |> Util.Time.formatDuration) ++ ")"))  ]
+          
       ]
    
 {-| Show the configuration options for the posts table
@@ -85,7 +85,7 @@ Relevant functions:
 postsConfigView : PostsConfig -> Html Msg
 postsConfigView config =
    div []
-        [ select [ id "select-posts-per-page" , onInput (String.toInt >> Maybe.withDefault 0 >> ChangedPostsToFetch >> ConfigChanged) ] -- de modificat cu message
+        [ div[][select [ id "select-posts-per-page" , onInput (String.toInt >> Maybe.withDefault 0 >> PostsToShowChanged >> ConfigChanged) ] -- de modificat cu message
             [ option [ value "10" ] [ text "10"  ]
             , option [ value "25" ] [ text "25" ]
             , option [ value "50" ] [ text "50" ]
@@ -93,12 +93,12 @@ postsConfigView config =
         , select [ id "select-sort-by" , onInput ( sortFromString >> Maybe.withDefault None >> ChangedSortBy >> ConfigChanged) ]
             [ option [ value "score"] [ text "Score" ]
             , option [ value "title" ] [ text "Title" ]
-            , option [ value "datePosted"] [ text "Date Posted" ]
-            , option [ value "unsorted" ] [ text "Unsorted" ]
-            ]
-        , input [id "checkbox-show-job-posts", type_ "checkbox",onCheck (ChangedshowJobs >> ConfigChanged) ][]
-        , text "Show job posts?"
+            , option [ value "Posted"] [ text "Posted" ]
+            , option [ value "None" ] [ text "None" ]
+            ]]
+        , div[][input [id "checkbox-show-job-posts", type_ "checkbox", onCheck (ChangedshowJobs >> ConfigChanged) ][]
+        , text "Show job"
         ,input [id "checkbox-show-text-only-posts", type_ "checkbox",  onCheck (ChangedShowTextOnly >> ConfigChanged)][]
-        , text "Show posts without url?"]
+        , text "Show text"]]
 
 

@@ -9530,6 +9530,87 @@ var $elm$virtual_dom$VirtualDom$toHandlerInt = function (handler) {
 };
 var $elm$html$Html$div = _VirtualDom_node('div');
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
+var $elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			$elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
+var $author$project$Model$PostsConfig$sortToCompareFn = function (sort) {
+	switch (sort.$) {
+		case 'Score':
+			return F2(
+				function (postA, postB) {
+					return A2($elm$core$Basics$compare, postB.score, postA.score);
+				});
+		case 'Title':
+			return F2(
+				function (postA, postB) {
+					return A2($elm$core$Basics$compare, postA.title, postB.title);
+				});
+		case 'Posted':
+			return F2(
+				function (postA, postB) {
+					return A2(
+						$elm$core$Basics$compare,
+						$elm$time$Time$posixToMillis(postB.time),
+						$elm$time$Time$posixToMillis(postA.time));
+				});
+		default:
+			return F2(
+				function (_v1, _v2) {
+					return $elm$core$Basics$EQ;
+				});
+	}
+};
+var $elm$core$List$sortWith = _List_sortWith;
+var $author$project$Model$PostsConfig$filterPosts = F2(
+	function (config, posts) {
+		var textPosts = function (post) {
+			if (!config.showTextOnly) {
+				var _v0 = post.url;
+				if (_v0.$ === 'Just') {
+					var u = _v0.a;
+					return true;
+				} else {
+					return false;
+				}
+			} else {
+				var _v1 = post.url;
+				if (_v1.$ === 'Just') {
+					var u = _v1.a;
+					return true;
+				} else {
+					return true;
+				}
+			}
+		};
+		var jobPosts = function (post) {
+			return config.showJobs ? (post.type_ === 'job') : (post.type_ !== 'job');
+		};
+		var filteredPosts = A2(
+			$elm$core$List$filter,
+			function (post) {
+				return jobPosts(post);
+			},
+			A2(
+				$elm$core$List$filter,
+				function (post) {
+					return textPosts(post);
+				},
+				posts));
+		var finalListTake = A2($elm$core$List$take, config.postsToShow, filteredPosts);
+		var finalPosts = A2(
+			$elm$core$List$sortWith,
+			$author$project$Model$PostsConfig$sortToCompareFn(config.sortBy),
+			finalListTake);
+		return finalPosts;
+	});
 var $elm$html$Html$a = _VirtualDom_node('a');
 var $elm$html$Html$Attributes$stringProperty = F2(
 	function (key, string) {
@@ -9812,27 +9893,6 @@ var $author$project$View$Posts$postToHtml = F2(
 					$elm$html$Html$td,
 					_List_fromArray(
 						[
-							$elm$html$Html$Attributes$class('post-by')
-						]),
-					_List_fromArray(
-						[
-							$elm$html$Html$text(post.by)
-						])),
-					A2(
-					$elm$html$Html$td,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$class('post-id')
-						]),
-					_List_fromArray(
-						[
-							$elm$html$Html$text(
-							$elm$core$String$fromInt(post.id))
-						])),
-					A2(
-					$elm$html$Html$td,
-					_List_fromArray(
-						[
 							$elm$html$Html$Attributes$class('post-score')
 						]),
 					_List_fromArray(
@@ -9882,6 +9942,16 @@ var $author$project$View$Posts$postToHtml = F2(
 					$elm$html$Html$td,
 					_List_fromArray(
 						[
+							$elm$html$Html$Attributes$class('post-type')
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text(post.type_)
+						])),
+					A2(
+					$elm$html$Html$td,
+					_List_fromArray(
+						[
 							$elm$html$Html$Attributes$class('post-time')
 						]),
 					_List_fromArray(
@@ -9892,16 +9962,6 @@ var $author$project$View$Posts$postToHtml = F2(
 									$elm$core$Maybe$withDefault,
 									{days: 0, hours: 0, minutes: 0, seconds: 0},
 									A2($author$project$Util$Time$durationBetween, post.time, currentTime))) + ')')))
-						])),
-					A2(
-					$elm$html$Html$td,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$class('post-type')
-						]),
-					_List_fromArray(
-						[
-							$elm$html$Html$text(post.type_)
 						]))
 				]));
 	});
@@ -9950,6 +10010,13 @@ var $author$project$View$Posts$postTable = F3(
 											_List_Nil,
 											_List_fromArray(
 												[
+													$elm$html$Html$text('Link')
+												])),
+											A2(
+											$elm$html$Html$th,
+											_List_Nil,
+											_List_fromArray(
+												[
 													$elm$html$Html$text('Type')
 												])),
 											A2(
@@ -9958,13 +10025,6 @@ var $author$project$View$Posts$postTable = F3(
 											_List_fromArray(
 												[
 													$elm$html$Html$text('Posted Date')
-												])),
-											A2(
-											$elm$html$Html$th,
-											_List_Nil,
-											_List_fromArray(
-												[
-													$elm$html$Html$text('Link')
 												]))
 										]))
 								])),
@@ -9974,13 +10034,10 @@ var $author$project$View$Posts$postTable = F3(
 							A2(
 								$elm$core$List$map,
 								$author$project$View$Posts$postToHtml(currentTime),
-								posts))
+								A2($author$project$Model$PostsConfig$filterPosts, config, posts)))
 						]))
 				]));
 	});
-var $author$project$Model$PostsConfig$ChangedPostsToFetch = function (a) {
-	return {$: 'ChangedPostsToFetch', a: a};
-};
 var $author$project$Model$PostsConfig$ChangedShowTextOnly = function (a) {
 	return {$: 'ChangedShowTextOnly', a: a};
 };
@@ -9992,6 +10049,9 @@ var $author$project$Model$PostsConfig$ChangedshowJobs = function (a) {
 };
 var $author$project$Model$ConfigChanged = function (a) {
 	return {$: 'ConfigChanged', a: a};
+};
+var $author$project$Model$PostsConfig$PostsToShowChanged = function (a) {
+	return {$: 'PostsToShowChanged', a: a};
 };
 var $elm$html$Html$Attributes$id = $elm$html$Html$Attributes$stringProperty('id');
 var $elm$html$Html$input = _VirtualDom_node('input');
@@ -10074,131 +10134,143 @@ var $author$project$View$Posts$postsConfigView = function (config) {
 		_List_fromArray(
 			[
 				A2(
-				$elm$html$Html$select,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$id('select-posts-per-page'),
-						$elm$html$Html$Events$onInput(
-						A2(
-							$elm$core$Basics$composeR,
-							$elm$core$String$toInt,
-							A2(
-								$elm$core$Basics$composeR,
-								$elm$core$Maybe$withDefault(0),
-								A2($elm$core$Basics$composeR, $author$project$Model$PostsConfig$ChangedPostsToFetch, $author$project$Model$ConfigChanged))))
-					]),
+				$elm$html$Html$div,
+				_List_Nil,
 				_List_fromArray(
 					[
 						A2(
-						$elm$html$Html$option,
+						$elm$html$Html$select,
 						_List_fromArray(
 							[
-								$elm$html$Html$Attributes$value('10')
+								$elm$html$Html$Attributes$id('select-posts-per-page'),
+								$elm$html$Html$Events$onInput(
+								A2(
+									$elm$core$Basics$composeR,
+									$elm$core$String$toInt,
+									A2(
+										$elm$core$Basics$composeR,
+										$elm$core$Maybe$withDefault(0),
+										A2($elm$core$Basics$composeR, $author$project$Model$PostsConfig$PostsToShowChanged, $author$project$Model$ConfigChanged))))
 							]),
 						_List_fromArray(
 							[
-								$elm$html$Html$text('10')
+								A2(
+								$elm$html$Html$option,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$value('10')
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('10')
+									])),
+								A2(
+								$elm$html$Html$option,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$value('25')
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('25')
+									])),
+								A2(
+								$elm$html$Html$option,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$value('50')
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('50')
+									]))
 							])),
 						A2(
-						$elm$html$Html$option,
+						$elm$html$Html$select,
 						_List_fromArray(
 							[
-								$elm$html$Html$Attributes$value('25')
+								$elm$html$Html$Attributes$id('select-sort-by'),
+								$elm$html$Html$Events$onInput(
+								A2(
+									$elm$core$Basics$composeR,
+									$author$project$Model$PostsConfig$sortFromString,
+									A2(
+										$elm$core$Basics$composeR,
+										$elm$core$Maybe$withDefault($author$project$Model$PostsConfig$None),
+										A2($elm$core$Basics$composeR, $author$project$Model$PostsConfig$ChangedSortBy, $author$project$Model$ConfigChanged))))
 							]),
 						_List_fromArray(
 							[
-								$elm$html$Html$text('25')
-							])),
-						A2(
-						$elm$html$Html$option,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$value('50')
-							]),
-						_List_fromArray(
-							[
-								$elm$html$Html$text('50')
+								A2(
+								$elm$html$Html$option,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$value('score')
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('Score')
+									])),
+								A2(
+								$elm$html$Html$option,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$value('title')
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('Title')
+									])),
+								A2(
+								$elm$html$Html$option,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$value('Posted')
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('Posted')
+									])),
+								A2(
+								$elm$html$Html$option,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$value('None')
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('None')
+									]))
 							]))
 					])),
 				A2(
-				$elm$html$Html$select,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$id('select-sort-by'),
-						$elm$html$Html$Events$onInput(
-						A2(
-							$elm$core$Basics$composeR,
-							$author$project$Model$PostsConfig$sortFromString,
-							A2(
-								$elm$core$Basics$composeR,
-								$elm$core$Maybe$withDefault($author$project$Model$PostsConfig$None),
-								A2($elm$core$Basics$composeR, $author$project$Model$PostsConfig$ChangedSortBy, $author$project$Model$ConfigChanged))))
-					]),
+				$elm$html$Html$div,
+				_List_Nil,
 				_List_fromArray(
 					[
 						A2(
-						$elm$html$Html$option,
+						$elm$html$Html$input,
 						_List_fromArray(
 							[
-								$elm$html$Html$Attributes$value('score')
+								$elm$html$Html$Attributes$id('checkbox-show-job-posts'),
+								$elm$html$Html$Attributes$type_('checkbox'),
+								$elm$html$Html$Events$onCheck(
+								A2($elm$core$Basics$composeR, $author$project$Model$PostsConfig$ChangedshowJobs, $author$project$Model$ConfigChanged))
 							]),
-						_List_fromArray(
-							[
-								$elm$html$Html$text('Score')
-							])),
+						_List_Nil),
+						$elm$html$Html$text('Show job'),
 						A2(
-						$elm$html$Html$option,
+						$elm$html$Html$input,
 						_List_fromArray(
 							[
-								$elm$html$Html$Attributes$value('title')
+								$elm$html$Html$Attributes$id('checkbox-show-text-only-posts'),
+								$elm$html$Html$Attributes$type_('checkbox'),
+								$elm$html$Html$Events$onCheck(
+								A2($elm$core$Basics$composeR, $author$project$Model$PostsConfig$ChangedShowTextOnly, $author$project$Model$ConfigChanged))
 							]),
-						_List_fromArray(
-							[
-								$elm$html$Html$text('Title')
-							])),
-						A2(
-						$elm$html$Html$option,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$value('datePosted')
-							]),
-						_List_fromArray(
-							[
-								$elm$html$Html$text('Date Posted')
-							])),
-						A2(
-						$elm$html$Html$option,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$value('unsorted')
-							]),
-						_List_fromArray(
-							[
-								$elm$html$Html$text('Unsorted')
-							]))
-					])),
-				A2(
-				$elm$html$Html$input,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$id('checkbox-show-job-posts'),
-						$elm$html$Html$Attributes$type_('checkbox'),
-						$elm$html$Html$Events$onCheck(
-						A2($elm$core$Basics$composeR, $author$project$Model$PostsConfig$ChangedshowJobs, $author$project$Model$ConfigChanged))
-					]),
-				_List_Nil),
-				$elm$html$Html$text('Show job posts?'),
-				A2(
-				$elm$html$Html$input,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$id('checkbox-show-text-only-posts'),
-						$elm$html$Html$Attributes$type_('checkbox'),
-						$elm$html$Html$Events$onCheck(
-						A2($elm$core$Basics$composeR, $author$project$Model$PostsConfig$ChangedShowTextOnly, $author$project$Model$ConfigChanged))
-					]),
-				_List_Nil),
-				$elm$html$Html$text('Show posts without url?')
+						_List_Nil),
+						$elm$html$Html$text('Show text')
+					]))
 			]));
 };
 var $author$project$Main$view = function (model) {
@@ -10872,17 +10944,6 @@ var $author$project$Test$Reporter$Json$reportBegin = function (_v0) {
 						$elm$core$String$fromInt(initialSeed)))
 				])));
 };
-var $elm$core$List$filter = F2(
-	function (isGood, list) {
-		return A3(
-			$elm$core$List$foldr,
-			F2(
-				function (x, xs) {
-					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
-				}),
-			_List_Nil,
-			list);
-	});
 var $elm_explorations$test$AsciiTable$AlignLeft = {$: 'AlignLeft'};
 var $elm_explorations$test$AsciiTable$AlignRight = {$: 'AlignRight'};
 var $elm_explorations$test$Test$Runner$Distribution$bars = 30;
@@ -24889,60 +24950,6 @@ var $author$project$TestUtils$expectEach = F2(
 					$elm$core$List$length(l) - 1)),
 			l);
 	});
-var $author$project$Model$PostsConfig$sortToCompareFn = function (sort) {
-	switch (sort.$) {
-		case 'Score':
-			return F2(
-				function (postA, postB) {
-					return A2($elm$core$Basics$compare, postB.score, postA.score);
-				});
-		case 'Title':
-			return F2(
-				function (postA, postB) {
-					return A2($elm$core$Basics$compare, postA.title, postB.title);
-				});
-		case 'Posted':
-			return F2(
-				function (postA, postB) {
-					return A2(
-						$elm$core$Basics$compare,
-						$elm$time$Time$posixToMillis(postB.time),
-						$elm$time$Time$posixToMillis(postA.time));
-				});
-		default:
-			return F2(
-				function (_v1, _v2) {
-					return $elm$core$Basics$EQ;
-				});
-	}
-};
-var $elm$core$List$sortWith = _List_sortWith;
-var $author$project$Model$PostsConfig$filterPosts = F2(
-	function (config, posts) {
-		var textPosts = function (post) {
-			return (!config.showTextOnly) ? ($elm$core$String$toLower(post.type_) === 'story') : false;
-		};
-		var jobPosts = function (post) {
-			return (!config.showJobs) ? ($elm$core$String$toLower(post.type_) === 'job') : false;
-		};
-		var filteredPosts = A2(
-			$elm$core$List$filter,
-			function (post) {
-				return jobPosts(post);
-			},
-			A2(
-				$elm$core$List$filter,
-				function (post) {
-					return textPosts(post);
-				},
-				posts));
-		var finalListTake = A2($elm$core$List$take, config.postsToShow, filteredPosts);
-		var finalPosts = A2(
-			$elm$core$List$sortWith,
-			$author$project$Model$PostsConfig$sortToCompareFn(config.sortBy),
-			finalListTake);
-		return finalPosts;
-	});
 var $elm_explorations$test$Expect$onFail = F2(
 	function (str, expectation) {
 		if (expectation.$ === 'Pass') {
@@ -25984,7 +25991,7 @@ var $author$project$Test$Generated$Main$main = A2(
 		processes: 8,
 		report: $author$project$Test$Reporter$Reporter$ConsoleReport($author$project$Console$Text$Monochrome),
 		runs: 100,
-		seed: 376158560164992
+		seed: 14415381385431
 	},
 	_List_fromArray(
 		[
@@ -26065,7 +26072,7 @@ var $author$project$Test$Generated$Main$main = A2(
 _Platform_export({'Test':{'Generated':{'Main':{'init':$author$project$Test$Generated$Main$main($elm$json$Json$Decode$int)(0)}}}});}(this));
 return this.Elm;
 })({});
-var pipeFilename = "\\\\.\\pipe\\elm_test-18820-1";
+var pipeFilename = "\\\\.\\pipe\\elm_test-23872-1";
 var net = require('net'),
   client = net.createConnection(pipeFilename);
 
